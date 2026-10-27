@@ -21,7 +21,7 @@ public class EmployeeApp {
             String line;
 
             // Read each employee line until the end of the file
-            while ((line = reader.readLine()) !=null){
+            while (( line = reader.readLine()) !=null){
 
                 // Split the line on | into separate fields
                 String[] fields = line.split("\\|");
