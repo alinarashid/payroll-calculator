@@ -9,9 +9,10 @@ import java.util.Scanner;
  * Payroll Calculator
  * Asks the user for an employee file to read and a payroll file to create.
  * Reads each employee, calculates their gross pay, and writes the results
- * to the new payroll file in the format: id|name|gross pay
+ * to the new payroll file.
+ * - .csv file  -> id|name|gross pay
+ * - .json file -> a JSON array of { "id", "name", "grossPay" } objects (bonus)
  */
-
 public class EmployeeApp {
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
@@ -23,23 +24,33 @@ public class EmployeeApp {
         System.out.print("Enter the name of the payroll file to create: ");
         String outputFile = scanner.nextLine();
 
-        // try: reading the file can fail (e.g. file not found)
-        try{
-            // Open input file for reading
+        // Check the output format once and remember it
+        boolean isJson = outputFile.endsWith(".json");
+
+        // Try: reading or writing a file can fail (e.g. file not found)
+        try {
+            // Open the input file for reading
             BufferedReader reader = new BufferedReader(new FileReader(inputFile));
 
             // Create the new payroll file for writing
             BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile));
 
-            // Header goes once before the loop
-            writer.write("id|name|gross pay\n");
+            // Before the loop: JSON starts with [, CSV starts with a header line
+            if (isJson) {
+                writer.write("[\n");
+            } else {
+                writer.write("id|name|gross pay\n");
+            }
 
             // Skip the input file's header line (id|name|hours-worked|pay-rate)
             reader.readLine();
             String line;
 
+            // Tracks the first JSON item (no comma before it)
+            boolean first = true;
+
             // Read each employee line until the end of the file
-            while (( line = reader.readLine()) !=null){
+            while ((line = reader.readLine()) != null) {
 
                 // Split the line on | into separate fields
                 String[] fields = line.split("\\|");
@@ -53,20 +64,39 @@ public class EmployeeApp {
                 // Create an Employee object from this line's data
                 Employee employee = new Employee(employeeId, name, hoursWorked, payRate);
 
-                // Build the payroll line (id|name|gross pay) and write it to the file
-                String row = String.format("%d|%s|%.2f\n", employee.getEmployeeId(), employee.getName(), employee.getGrossPay());
-                writer.write(row);
-
+                if (isJson) {
+                    // Comma before every item except the first
+                    if (!first) {
+                        writer.write(",\n");
+                    }
+                    // Build the JSON object and write it
+                    String item = String.format("{ \"id\": %d, \"name\" : \"%s\", \"grossPay\" : %.2f }",
+                            employee.getEmployeeId(), employee.getName(), employee.getGrossPay());
+                    writer.write(item);
+                    first = false;
+                } else {
+                    // Build the CSV line and write it
+                    String row = String.format("%d|%s|%.2f\n",
+                            employee.getEmployeeId(), employee.getName(), employee.getGrossPay());
+                    writer.write(row);
+                }
             }
-            // Close both files
+
+            // After the loop: close the JSON array
+            if (isJson) {
+                writer.write("\n]");
+            }
+
+            // Close both files (closing the writer saves the data)
             reader.close();
             writer.close();
 
             System.out.println("Payroll file has been created!");
 
-        } catch (Exception e){
+        } catch (Exception e) {
             // Runs if a file can't be read/written or a line has bad data
-            System.out.println("Error: " + e.getMessage());        }
+            System.out.println("Error: " + e.getMessage());
+        }
 
         scanner.close();
     }
