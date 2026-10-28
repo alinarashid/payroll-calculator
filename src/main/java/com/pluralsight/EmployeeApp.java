@@ -1,22 +1,40 @@
 package com.pluralsight;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.FileReader;
+import java.io.FileWriter;
+import java.util.Scanner;
 
 /**
  * Payroll Calculator
- * Reads employee data from employees.csv, creates an Employee object
- * for each line, and prints each employee's ID, name and gross pay.
+ * Asks the user for an employee file to read and a payroll file to create.
+ * Reads each employee, calculates their gross pay, and writes the results
+ * to the new payroll file in the format: id|name|gross pay
  */
 
 public class EmployeeApp {
     public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+
+        // Ask for the file to read and the file to create
+        System.out.print("Enter the file to read: ");
+        String inputFile = scanner.nextLine();
+
+        System.out.print("Enter the name of the payroll file to create: ");
+        String outputFile = scanner.nextLine();
 
         // try: reading the file can fail (e.g. file not found)
         try{
-            // Open employees.csv for reading
-            BufferedReader reader = new BufferedReader(new FileReader("employees.csv"));
+            // Open input file for reading
+            BufferedReader reader = new BufferedReader(new FileReader(inputFile));
 
-            // Skip the header line (id|name|hours-worked|pay-rate)
+            // Create the new payroll file for writing
+            BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile));
+
+            // Header goes once before the loop
+            writer.write("id|name|gross pay\n");
+
+            // Skip the input file's header line (id|name|hours-worked|pay-rate)
             reader.readLine();
             String line;
 
@@ -35,15 +53,21 @@ public class EmployeeApp {
                 // Create an Employee object from this line's data
                 Employee employee = new Employee(employeeId, name, hoursWorked, payRate);
 
-                // Print Id, name and gross pay (money format with 2 decimals)
-                System.out.printf("%d - %s - $%.2f%n", employee.getEmployeeId(), employee.getName(), employee.getGrossPay());
+                // Build the payroll line (id|name|gross pay) and write it to the file
+                String row = String.format("%d|%s|%.2f\n", employee.getEmployeeId(), employee.getName(), employee.getGrossPay());
+                writer.write(row);
+
             }
-            // Close the file
+            // Close both files
             reader.close();
+            writer.close();
+
+            System.out.println("Payroll file has been created!");
 
         } catch (Exception e){
-            // Runs if the file can't be read or a line has bad data
-            System.out.println("Could not read employee file");
-        }
+            // Runs if a file can't be read/written or a line has bad data
+            System.out.println("Error: " + e.getMessage());        }
+
+        scanner.close();
     }
 }
